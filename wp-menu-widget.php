@@ -131,7 +131,7 @@ class WP_menu_output_widget extends WP_Widget {
     function widget($args, $instance)
     {
 	extract($args);
-	extract($instance);
+	@extract($instance);
 
 	global $wp_query;
 	
