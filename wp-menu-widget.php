@@ -136,7 +136,7 @@ class WP_menu_output_widget extends WP_Widget {
 	global $wp_query;
 	
 	echo $before_widget;
-	    echo $before_title . $title . $after_title;
+	    if($title) echo $before_title . $title . $after_title;
 
 
 	    if($output_page_specific_menu)
