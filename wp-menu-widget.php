@@ -3,29 +3,68 @@
 Plugin Name: WP Menu widget
 Plugin URI: 
 Description: Widget that outputs selected menu which was created in Appearance → Menus
-Version: 1.0
+Version: 1.1
 Author: Pavel Burov (Dark Delphin)
 Author URI: http://pavelburov.com
 */
 
 class WP_menu_output_widget extends WP_Widget {
     
-    function __construct()
-    {
-	$params = array(
-		'name' => 'WP Menu widget',
-	    'description' => 'Widget that outputs selected menu which was created in Appearance → Menus' // plugin description that is showed in Widget section of admin panel
-	);
+    //function __construct()
+    //{
+	//$params = array(
+	//	'name' => 'WP Menu widget',
+	//   'description' => 'Widget that outputs selected menu which was created in Appearance → Menus' // plugin description that is showed in Widget section of admin panel
+	//);
 	
-	parent::__construct('WP_menu_output_widget', '', $params);
+	//parent::__construct('WP_menu_output_widget', '', $params);
 
-	add_shortcode( 'wp_menu_output', array($this, 'wp_menu_output_shortcode') );
+	
+
+	// add_shortcode( 'wp_menu_output', array($this, 'wp_menu_output_shortcode') );
 	// add_filter( 'wp_nav_menu_items', array($this, 'WP_menu_output_widget_custom_menu_item'), 10, 2 );
-    }
+    //}
+
+    // Constructor
+	function WP_menu_output_widget() 
+	{
+
+		$params = array(
+			'classname' => 'wp_menu_output_widget',
+		    'description' => 'Widget that outputs selected menu which was created in Appearance → Menus' // plugin description that is showed in Widget section of admin panel
+		);
+
+		// id, name, other parameters
+		$this->WP_Widget('wp_menu_output_widget', 'WP Menu widget', $params);
+
+		add_shortcode( 'wp_menu_output', array($this, 'wp_menu_output_shortcode') );
+	}
+
+	function update( $new_instance, $old_instance ) {
+		
+		$instance = $old_instance;
+
+		$instance['title'] = strip_tags($new_instance['title']);
+		$instance['output_widget_specific_menu'] = !empty($new_instance['output_widget_specific_menu']) ? 1 : 0;
+		$instance['outputmenu'] = strip_tags($new_instance['outputmenu']);
+		$instance['loggedmenu'] = strip_tags($new_instance['loggedmenu']);
+		$instance['output_subpages'] = !empty($new_instance['output_subpages']) ? 1 : 0;
+		$instance['output_page_specific_menu'] = !empty($new_instance['output_page_specific_menu']) ? 1 : 0;
+
+		return $instance;
+	}
     
     function form($instance)
     {
-	extract($instance);
+		// extract($instance);
+	    $instance = wp_parse_args( (array) $instance, array( 'title' => '') );
+
+		$title = esc_attr( $instance['title'] );
+		$output_widget_specific_menu = isset( $instance['output_widget_specific_menu'] ) ? (bool) $instance['output_widget_specific_menu'] : false;
+		$outputmenu = esc_attr( $instance['outputmenu'] );
+		$loggedmenu = esc_attr( $instance['loggedmenu'] );
+		$output_subpages = isset( $instance['output_subpages'] ) ? (bool) $instance['output_subpages'] : false;
+		$output_page_specific_menu = isset( $instance['output_page_specific_menu'] ) ? (bool) $instance['output_page_specific_menu'] : false;
 
 		
 	$menus = get_terms( 'nav_menu', array( 'hide_empty' => true ) );
@@ -36,8 +75,8 @@ class WP_menu_output_widget extends WP_Widget {
 	    	<input type="text" class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" value="<?php if(isset($title)) echo esc_attr($title) ?>"/>
 		</p>
 	    <p>
-	    	<input type="checkbox" id="<? echo $this->get_field_id('output_widget_specific_menu'); ?>" name="<? echo $this->get_field_name('output_widget_specific_menu'); ?>" value="1" <?php checked( '1', $output_widget_specific_menu ); ?>/>
-	    	<label for="<? echo $this->get_field_id('output_widget_specific_menu'); ?>">Output widget specific menu</label>
+	    	<input type="checkbox" id="<?php echo $this->get_field_id('output_widget_specific_menu'); ?>" name="<?php echo $this->get_field_name('output_widget_specific_menu'); ?>" <?php checked( $output_widget_specific_menu ); ?>/>
+	    	<label for="<?php echo $this->get_field_id('output_widget_specific_menu'); ?>">Output widget specific menu</label>
 		</p>
 	    <p>
 	    	<?php echo __('Show following menu to <b>guest</b> user'); ?>
@@ -72,12 +111,12 @@ class WP_menu_output_widget extends WP_Widget {
 			</select>
 		</p>
 		<p>
-	    	<input type="checkbox" id="<? echo $this->get_field_id('output_subpages'); ?>" name="<? echo $this->get_field_name('output_subpages'); ?>" value="1" <?php checked( '1', $output_subpages ); ?>/>
-	    	<label for="<? echo $this->get_field_id('output_subpages'); ?>">Output subpages list</label>
+	    	<input type="checkbox" id="<?php echo $this->get_field_id('output_subpages'); ?>" name="<?php echo $this->get_field_name('output_subpages'); ?>" <?php checked( $output_subpages ); ?>/>
+	    	<label for="<?php echo $this->get_field_id('output_subpages'); ?>">Output subpages list</label>
 		</p>
 		<p>
-	    	<input type="checkbox" id="<? echo $this->get_field_id('output_page_specific_menu'); ?>" name="<? echo $this->get_field_name('output_page_specific_menu'); ?>" value="1" <?php checked( '1', $output_page_specific_menu ); ?>/>
-	    	<label for="<? echo $this->get_field_id('output_page_specific_menu'); ?>">Output page specific menu</label>
+	    	<input type="checkbox" id="<?php echo $this->get_field_id('output_page_specific_menu'); ?>" name="<?php echo $this->get_field_name('output_page_specific_menu'); ?>" <?php checked( $output_page_specific_menu ); ?>/>
+	    	<label for="<?php echo $this->get_field_id('output_page_specific_menu'); ?>">Output page specific menu</label>
 		</p>
 	<?php
     }
@@ -132,6 +171,13 @@ class WP_menu_output_widget extends WP_Widget {
     {
 	extract($args);
 	@extract($instance);
+	
+	$title = $instance['title'];
+	$output_widget_specific_menu = $instance['output_widget_specific_menu'];
+	$outputmenu = $instance['outputmenu'];
+	$loggedmenu = $instance['loggedmenu'];
+	$output_subpages = $instance['output_subpages'];
+	$output_page_specific_menu = $instance['output_page_specific_menu'];
 
 	global $wp_query;
 	
