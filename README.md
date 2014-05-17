@@ -2,6 +2,13 @@
 
 Widget outputs menus that were generated in Menu Editor.
 
+#### Update 1.2.1
+
+* Code cleanup.
+* Improved page specific menu output. Now supports guest and logged in user menus.
+* Shortcode for pages does not require parameters anymore. It uses "page specific menu output".
+* Template function dropped due to instability.
+
 Features
 
 * Output widget specific menu
@@ -16,20 +23,9 @@ Automatically outputs the list of child pages for current active page.
 
 Use this option when you need to output specific static (generated in Menu Editor) menu on a specific page. After plugin is activated "Select menu" metabox is added to Pages and you can choose the menu you want to output directly from page editing screen below the main editor.
 
-You can also embed widget functionality in template with function:
-
-```
-wp_menu_output( $loggedmenu, $outputmenu, $output_widget_specific_menu = false, $output_subpages = false, $output_page_specific_menu = false)
-```	
-
 Or in page with shortcode:
 
 ```
 [wp_menu_output]
 ```	
 
-Parameters:
-
-```loggedmenu``` and ```outputmenu``` - slugs for menus names.
-
-```output_widget_specific_menu```, ```output_subpages```, ```output_page_specific_menu``` - pretty self explanatory parameters. Requires ```true``` or ```false```.

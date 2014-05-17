@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: WP Menu widget
-Plugin URI: 
+Plugin URI: https://github.com/darkdelphin/wp-menu-widget
 Description: Widget that outputs selected menu which was created in Appearance → Menus
-Version: 1.1
+Version: 1.2.1
 Author: Pavel Burov (Dark Delphin)
 Author URI: http://pavelburov.com
 */
@@ -186,16 +186,14 @@ class WP_menu_output_widget extends WP_Widget {
 
 
 	    if($output_page_specific_menu)
- 			{
- 				$pageid = get_the_ID();
+		{
+			$pageid = get_the_ID();
 
-	    		$meta = get_post_meta($pageid);
-            	
-            	if($meta['wpmows_select_menu'][0])
-        		{
-        			wp_nav_menu( array( 'menu' => $meta['wpmows_select_menu'][0] ) );	
-        		}
- 			}
+			$meta = get_post_meta($pageid);
+
+			if(is_user_logged_in() && $meta['wpmows_select_logged_menu'][0]) wp_nav_menu( array( 'menu' => $meta['wpmows_select_logged_menu'][0] ) );
+			elseif($meta['wpmows_select_guest_menu'][0]) wp_nav_menu( array( 'menu' => $meta['wpmows_select_guest_menu'][0] ) );
+		}
  			
 	    if($output_subpages)
 	    {
@@ -223,22 +221,17 @@ class WP_menu_output_widget extends WP_Widget {
 		    }
 	    }
 
-            
-	    
 	echo $after_widget;
     }
 
     function wp_menu_output_shortcode( $atts )
     {
-    	extract( shortcode_atts( array(
-    	  'loggedmenu' => 'default',
-    	  'outputmenu' => 'default',
-	      'output_widget_specific_menu' => false,
-	      'output_subpages' => false,
-	      'output_page_specific_menu' => false
-     	), $atts ) );
-     	
-     	return wp_menu_output( $loggedmenu, $outputmenu, $output_widget_specific_menu, $output_subpages, $output_page_specific_menu);
+    	$pageid = get_the_ID();
+
+		$meta = get_post_meta($pageid);
+
+		if(is_user_logged_in() && $meta['wpmows_select_logged_menu'][0]) wp_nav_menu( array( 'menu' => $meta['wpmows_select_logged_menu'][0] ) );
+		elseif($meta['wpmows_select_guest_menu'][0]) wp_nav_menu( array( 'menu' => $meta['wpmows_select_guest_menu'][0] ) );
     }
 }
 
@@ -282,75 +275,58 @@ class wp_menu_output_widget_support {
     
     function select_menu_func($post)
     {
-        $val = get_post_meta($post->ID, 'wpmows_select_menu', true);
+        $logged = get_post_meta($post->ID, 'wpmows_select_logged_menu', true);
+        $guest = get_post_meta($post->ID, 'wpmows_select_guest_menu', true);
 
 		$menus = get_terms( 'nav_menu', array( 'hide_empty' => true ) );
         ?>
-
-        <label for="wpmows_select_menu"><?php echo __('Select menu'); ?> </label>
-        <select class="widefat" id="wpmows_select_menu" name="wpmows_select_menu">
+		
+		<label for="wpmows_select_menu"><?php echo __('Select guest menu'); ?> </label>
+        <select class="widefat" id="wpmows_select_guest_menu" name="wpmows_select_guest_menu">
 		<?php
 			echo '<option value="">No menu</option>';						
 
 		foreach ($menus as $menu) 
 		{
-			if(isset($val) && $val == $menu->slug) $selected = ' selected="selected"';
+			if(isset($guest) && $guest == $menu->slug) $selected = ' selected="selected"';
 			else $selected = '';
 			echo '<option value="'.$menu->slug.'"'.$selected.'>'.$menu->name.'</option>';						
 		}
 		?>
 		</select>
 
+        <label for="wpmows_select_menu"><?php echo __('Select logged in menu'); ?> </label>
+        <select class="widefat" id="wpmows_select_logged_menu" name="wpmows_select_logged_menu">
+		<?php
+			echo '<option value="">No menu</option>';						
+
+		foreach ($menus as $menu) 
+		{
+			if(isset($logged) && $logged == $menu->slug) $selected = ' selected="selected"';
+			else $selected = '';
+			echo '<option value="'.$menu->slug.'"'.$selected.'>'.$menu->name.'</option>';						
+		}
+		?>
+		</select>
+		
         <?php
     }
     
     function update_select_menu($id)
     {
-        if(isset($_POST['wpmows_select_menu']))
+        if(isset($_POST['wpmows_select_logged_menu']))
         {
-            update_post_meta($id, 'wpmows_select_menu', strip_tags($_POST['wpmows_select_menu']));
+            update_post_meta($id, 'wpmows_select_logged_menu', strip_tags($_POST['wpmows_select_logged_menu']));
+        }
+        if(isset($_POST['wpmows_select_guest_menu']))
+        {
+            update_post_meta($id, 'wpmows_select_guest_menu', strip_tags($_POST['wpmows_select_guest_menu']));
         }
     }
      
 }
 
-    
-// add_action('wp_enqueue_scripts', 'wpmows_styles');
-// function wpmows_styles()
-//     {
-// 	wp_register_style('wp_menu_output_widget_support', plugins_url('/css/wp_menu_output_widget_support.css', __FILE__) );
-// 	wp_enqueue_style('wp_menu_output_widget_support');
-//     }
-// add_action('wp_enqueue_scripts', 'wpmows_scripts');
-// function wpmows_scripts()
-//     {
-// 	wp_enqueue_script('wp_menu_output_widget_support', plugins_url('/js/wp_menu_output_widget_support.js', __FILE__), array('jquery'), '1.0', true );
-//     }
-// function wpaf_register_admin_scripts() 
-//     {
-//     wp_enqueue_script('wp_menu_output_widget_support', plugins_url('/js/wp_menu_output_widget_support.js', __FILE__), array('jquery'), '1.0', true );
-//     }
-// add_action( 'admin_enqueue_scripts', 'wpmows_register_admin_scripts' );
 $copy = new wp_menu_output_widget_support();
 
-
-if(!function_exists('wp_menu_output'))
-{
-	function wp_menu_output( $loggedmenu, $outputmenu, $output_widget_specific_menu = false, $output_subpages = false, $output_page_specific_menu = false)
-	{
-		$submenu = new WP_menu_output_widget();
-		$args = array(
-			'loggedmenu' => $loggedmenu,
-			'outputmenu' => $outputmenu
-			);
-		if($output_widget_specific_menu == true) $args['output_widget_specific_menu'] = true;
-
-		if($output_subpages == true) $args['output_subpages'] = true;
-		
-		if($output_page_specific_menu == true) $args['output_page_specific_menu'] = true;
-		
-		echo $submenu->widget($args, $instance);
-	}
-}
 
 ?>
